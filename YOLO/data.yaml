@@ -1,0 +1,11 @@
+path: E:\UCSD\Senior_Year\Senior_Design\code
+train: train
+val: val
+
+nc: 5
+names: 
+  0: organoid
+  1: debris
+  2: contaminant
+  3: organoid(blebbing)
+  4: bubbles
