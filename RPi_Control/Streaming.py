@@ -1,5 +1,4 @@
-from XY_Cycle import XYCycle
-from picamera2 import Picamera2
+from XY_cycle import XY_cycle
 import os, datetime as dt, pytz as tz, time, argparse, json
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
@@ -7,10 +6,10 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 
-parser = argparse.ArgumentParser(description = "Please enter a command")
+parser = argparse.ArgumentParser(description = "Please enter a command, -h for help")
 
-parser.add_argument("duration", type = int, required = True, help = "The total number of hours of observation")
-parser.add_argument("interval", type = int, help = "The interval between each photo upload")
+parser.add_argument("duration", type = int, help = "The total number of hours of observation")
+parser.add_argument("interval", type = int, help = "The interval between each photo upload in seconds")
 parser.add_argument("-o", help = "Output directory of organoid data")
 
 args = parser.parse_args()
@@ -18,61 +17,55 @@ args = parser.parse_args()
 duration = args.duration * 3600
 if args.interval == None:
     interval = 3600
-
+else:
+    interval = args.interval
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
-folder = "1kGmciW9RG8USL8sBMpX3glfaHrE_F_Ov"
+# folder = "1kGmciW9RG8USL8sBMpX3glfaHrE_F_Ov" # Main folder for 24-25 images
+folder = "1QsqQqV88MaevSBf_SdGpIzr2WKunXwcZ"
 
-def get_refreshed_credentials():
+def get_refreshed_credentials(SCOPES):
     creds = None
     if os.path.exists('token.json'):
         creds = Credentials.from_authorized_user_file('token.json', SCOPES)
 
     if creds and creds.expired and creds.refresh_token:
         creds.refresh(Request())
-        with open('token.json', 'w') as token_file:
-            token_file.write(creds.to_json())
     
     elif not creds:
         flow = InstalledAppFlow.from_client_secrets_file(
             'credentials.json', SCOPES)
-        creds = flow.run_console()
-        # Save credentials
-        with open('token.json', 'w') as token:
-            json.dump({
-                'token': creds.token,
-                'refresh_token': creds.refresh_token,
-                'token_uri': creds.token_uri,
-                'client_id': creds.client_id,
-                'client_secret': creds.client_secret,
-                'scopes': creds.scopes
-            }, token)
+        creds = flow.run_local_server()
+
+    with open('token.json', 'w') as token_file:
+        token_file.write(creds.to_json())
+            
     return creds
 
 start_time = time.time()
 
 # Upload photos at a given interval for some duration
-# Need to change code to refresh token every hour
 while  time.time() - start_time < duration:
 
-    XYCycle()
+    XY_cycle()
 
-    for ip in sorted(os.listdir("../temp_img_cache")): # Replace with actual directory
-        creds = get_refreshed_credentials()
+    for ip in sorted(os.listdir("temp_img_cache")):
+        full_path = "temp_img_cache/" + ip
+        creds = get_refreshed_credentials(SCOPES)
 
         service = build('drive', 'v3', credentials=creds)
 
         curr_time = dt.datetime.now(tz.timezone("US/Pacific"))
 
-        file_meta = {'name': f"{str(curr_time)}.jpg", "parents": [folder]}
+        file_meta = {'name': f"{ip}_{str(curr_time)}.jpg", "parents": [folder]}
 
-        media = MediaFileUpload(ip)
+        media = MediaFileUpload(full_path)
         file = service.files().create(body=file_meta,
                                             media_body=media,
                                             fields='id').execute()
     
-        os.remove(ip)
+        os.remove(full_path)
     
     time.sleep(interval)
 

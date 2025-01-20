@@ -13,11 +13,14 @@ def resetXY():
 
     while GPIO.input(17) or GPIO.input(27):
         if GPIO.input(17):
-            kit.stepper1.onestep(direction=stepper.BACKWARD, style=stepper.SINGLE)
+            kit.stepper1.onestep(direction=stepper.BACKWARD, style=stepper.SINGLE) # reset X
         if GPIO.input(27):
-            kit.stepper2.onestep(direction=stepper.FORWARD, style=stepper.SINGLE)
-        time.sleep(0.1)
+            kit.stepper2.onestep(direction=stepper.FORWARD, style=stepper.SINGLE) # reset Y
+        time.sleep(0.001)
     
     print("XY reset completed")
     
     return
+
+if __name__ == "__main__":
+    resetXY()

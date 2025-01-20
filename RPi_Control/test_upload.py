@@ -1,5 +1,5 @@
 # from picamera2 import Picamera2
-
+# import subprocess
 
 # # Initialize Picamera2
 # picam2 = Picamera2()
@@ -18,6 +18,8 @@
 # picam2.stop()
 
 # print("Image captured and saved as image.jpg!")
+# command = ["libcamera-still", "-o", "temp_img.jpg"]
+# subprocess.run(command, check=True)
 
 
 import os, time
@@ -51,19 +53,28 @@ creds = get_refreshed_credentials(SCOPES)
 
 service = build('drive', 'v3', credentials=creds)
 
-img_dir = '../test_image.jpg'
+img_dir = 'z_image2500/z-pos_650.jpg'
 folder = "1kGmciW9RG8USL8sBMpX3glfaHrE_F_Ov"
 
 start_time = time.time()
-for i in range(5):
-    file_meta = {'name': "test_image_" + str(i) + ".jpg",
-                "parents": [folder]
-                }
+# for i in range(5):
+#     file_meta = {'name': "test_image_" + str(i) + ".jpg",
+#                 "parents": [folder]
+#                 }
 
-    media = MediaFileUpload(img_dir)
-    file = service.files().create(body=file_meta,
-                                        media_body=media,
-                                        fields='id').execute()
+#     media = MediaFileUpload(img_dir)
+#     file = service.files().create(body=file_meta,
+#                                         media_body=media,
+#                                         fields='id').execute()
+
+file_meta = {'name': "Optimal_3150.jpg",
+                "parents": [folder]
+            }
+
+media = MediaFileUpload(img_dir)
+file = service.files().create(body=file_meta,
+                                    media_body=media,
+                                    fields='id').execute()
 
 end_time = time.time()
 

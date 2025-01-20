@@ -1,10 +1,37 @@
 from picamera2 import Picamera2
-import os, datetime as dt, pytz as tz, time
+import os, datetime as dt, pytz as tz, time, json
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+
+def get_refreshed_credentials(SCOPES):
+    creds = None
+    if os.path.exists('token.json'):
+        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+
+    if creds and creds.expired and creds.refresh_token:
+        creds.refresh(Request())
+        with open('token.json', 'w') as token_file:
+            token_file.write(creds.to_json())
+    
+    elif not creds:
+        flow = InstalledAppFlow.from_client_secrets_file(
+            'credentials.json', SCOPES)
+        creds = flow.run_console()
+        # Save credentials
+        with open('token.json', 'w') as token:
+            json.dump({
+                'token': creds.token,
+                'refresh_token': creds.refresh_token,
+                'token_uri': creds.token_uri,
+                'client_id': creds.client_id,
+                'client_secret': creds.client_secret,
+                'scopes': creds.scopes
+            }, token)
+    return creds
+
 
 # Initialize Picamera2
 picam2 = Picamera2()
@@ -28,7 +55,7 @@ start_time = time.time()
 
 while  time.time() - start_time < duration:
 
-    creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    creds = get_refreshed_credentials(SCOPES)
 
     service = build('drive', 'v3', credentials=creds)
 
