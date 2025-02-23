@@ -42,7 +42,7 @@ def from_to(start, end, step_wait):
         time.sleep(step_wait)
     return
 
-def XY_cycle(step_wait = 0.001):
+def XY_cycle(step_wait = 0):
     resetXY()
 
     for i in range(len(coord)-1):

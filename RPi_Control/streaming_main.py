@@ -1,5 +1,6 @@
 from XY_cycle import XY_cycle
-import os, datetime as dt, pytz as tz, time, argparse, json
+import os, datetime as dt, pytz as tz, time, argparse, gc
+from spin_motor import spin_start, spin_stop
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
@@ -15,15 +16,13 @@ parser.add_argument("-o", help = "Output directory of organoid data")
 args = parser.parse_args()
 
 duration = args.duration * 3600
-if args.interval == None:
-    interval = 3600
-else:
-    interval = args.interval
+interval = args.interval
+
 
 SCOPES = ['https://www.googleapis.com/auth/drive']
 
 # folder = "1kGmciW9RG8USL8sBMpX3glfaHrE_F_Ov" # Main folder for 24-25 images
-folder = "1QsqQqV88MaevSBf_SdGpIzr2WKunXwcZ"
+folder = "1QsqQqV88MaevSBf_SdGpIzr2WKunXwcZ" # Folde for 24 hr streaming experiments
 
 def get_refreshed_credentials(SCOPES):
     creds = None
@@ -48,6 +47,10 @@ start_time = time.time()
 # Upload photos at a given interval for some duration
 while  time.time() - start_time < duration:
 
+    spin_stop()
+
+    time.sleep(20) # Let organoids settle to the bottom of the plate after spin motor stops
+
     XY_cycle()
 
     for ip in sorted(os.listdir("temp_img_cache")):
@@ -67,6 +70,10 @@ while  time.time() - start_time < duration:
     
         os.remove(full_path)
     
+    spin_start() # restart spin motors
+
+    gc.collect() # collect garbage in memory to ensure the program runs for extended periods of time
+
     time.sleep(interval)
 
 print("Streaming stopped.")
